@@ -26,7 +26,7 @@ async def get_user_by_username(username: str):
     """
     Retrieve a user by their username from MongoDB.
     """
-    user = await users_collection.find_one({"username": username})
+    user = await users_collection.find_one({"username": {"$eq": username}})
     return user
 
 async def create_user(user: UserCreate):
