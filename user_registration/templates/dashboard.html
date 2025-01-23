@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <script>
+        // You can add logic to handle token retrieval or other tasks here if needed
+    </script>
+</head>
+<body>
+    <h1>Welcome, {{ username }}!</h1>
+    <p>This is your dashboard.</p>
+   
+    <form method="post" action="/generate_image" id="generateImageForm">
+        <label for="prompt">Enter prompt for image generation:</label>
+        <input type="text" id="prompt" name="prompt" required>
+        <input type="submit" value="Generate Image">
+    </form>
+
+</body>
+</html>

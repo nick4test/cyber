@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <br>
+        <button type="submit">Login</button>
+    </form>
+    <p id="errorMessage" style="color: red;"></p>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+
+            try {
+                // Preflight request
+                await fetch('/token', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer'
+                    }
+                });
+
+                // Actual request
+                const tokenResponse = await fetch('/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        username,
+                        password
+                    })
+                });
+
+                if (tokenResponse.ok) {
+                    const data = await tokenResponse.json();
+                    const accessToken = data.access_token;
+
+                    if (accessToken) {
+                        // Store the token securely
+                        localStorage.setItem('access_token', accessToken);
+
+                        // Fetch the dashboard content with the Authorization header
+                        const dashboardResponse = await fetch('/dashboard', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`
+                            }
+                        });
+
+                        if (dashboardResponse.ok) {
+                            window.location.href = '/dashboard';
+                        } else {
+                            errorMessage.textContent = 'Failed to load dashboard.';
+                        }
+                    } else {
+                        errorMessage.textContent = 'Access token is missing or invalid.';
+                    }
+                } else {
+                    const errorData = await tokenResponse.json();
+                    errorMessage.textContent = errorData.detail || 'Login failed. Please try again.';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'An error occurred. Please try again later.';
+            }
+        });
+    </script>
+</body>
+</html>

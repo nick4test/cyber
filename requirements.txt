@@ -1,0 +1,22 @@
+fastapi
+uvicorn
+pydantic
+jinja2
+aiofiles
+python-multipart
+mysql-connector-python
+mysqlclient
+bcrypt
+python-multipart
+jinja2
+passlib
+python-jose
+pydantic[email]
+pip install redis
+sudo apt-get install redis-server
+pymongo
+motor
+
+
+
+
