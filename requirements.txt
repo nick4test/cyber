@@ -4,8 +4,6 @@ pydantic
 jinja2
 aiofiles
 python-multipart
-mysql-connector-python
-mysqlclient
 bcrypt
 python-multipart
 jinja2

@@ -2,12 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, Form, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError
 import jwt
-from pydantic import BaseModel
 from fastapi.templating import Jinja2Templates
 from . import schemas, crud, auth
-from database import users_collection
 from datetime import timedelta
 import re
 from typing import Optional

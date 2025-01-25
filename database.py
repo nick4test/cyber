@@ -1,6 +1,5 @@
 import redis
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.errors import ConnectionFailure
 import urllib
 
 import os
