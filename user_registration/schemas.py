@@ -3,8 +3,9 @@ import re
 from typing import Optional
 
 class UserCreate(BaseModel):
-    username: EmailStr
+    username: str
     password: str = Field(..., min_length=8)
+    '''
     @field_validator('password')
     def validate_password(cls, value):
         if not re.search(r'[A-Z]', value):
@@ -16,6 +17,7 @@ class UserCreate(BaseModel):
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
             raise ValueError('Password must contain at least one special character.')
         return value
+        '''
 
 class User(BaseModel):
     id: int

@@ -1,7 +1,7 @@
 # auth.py
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from .database import users_collection
+from database import users_collection
 from fastapi import HTTPException
 import secrets
 from . import schemas

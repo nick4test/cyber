@@ -1,5 +1,5 @@
 # crud.py
-from .database import users_collection, redis_conn
+from database import users_collection, redis_conn
 import bcrypt
 import hashlib
 import uuid

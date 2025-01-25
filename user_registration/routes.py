@@ -7,7 +7,7 @@ import jwt
 from pydantic import BaseModel
 from fastapi.templating import Jinja2Templates
 from . import schemas, crud, auth
-from .database import users_collection
+from database import users_collection
 from datetime import timedelta
 import re
 from typing import Optional
@@ -184,3 +184,13 @@ async def logout(request: Request, token: str = Depends(oauth2_scheme),
            refresh_token :str = Header(None , alias="refresh_token")):
     await crud.add_token_to_blacklist(token, refresh_token)
     return {"detail": "Successfully logged out"}
+
+
+'''
+
+if you want the request routed from main file to user_registration/routes.py to /cloud_scanners 
+(for example http://127.0.0.1/user_registration/cloud_scanners/ec2_instance)
+from cloud_scanners import routes as cloud_scanner
+router.include_router(cloud_scanner.router, prefix="/cloud_scanners") 
+
+'''
