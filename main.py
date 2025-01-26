@@ -25,7 +25,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=methods,
     allow_headers=cors_headers,
-    expose_headers=["*"]
+    expose_headers=cors_headers,
+
 )
 
 # Middleware to set X-Frame-Options header
@@ -66,5 +67,5 @@ async def check_blacklist(request: Request, call_next):
     response = await call_next(request)
     return response
 
-app.include_router(user_registration_routes.router, prefix="/user_registration")
+
 app.include_router(cloud_scanner.router, prefix="/cloud_scanners")

@@ -1,5 +1,5 @@
 # routes.py
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, Form, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, Form, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import jwt
@@ -8,10 +8,12 @@ from . import schemas, crud, auth
 from datetime import timedelta
 import re
 from typing import Optional
+import main
 
 router = APIRouter()
 templates = Jinja2Templates(directory="user_registration/templates")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 @router.get("/register", response_class=HTMLResponse)
 async def register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
@@ -181,6 +183,13 @@ async def logout(request: Request, token: str = Depends(oauth2_scheme),
            refresh_token :str = Header(None , alias="refresh_token")):
     await crud.add_token_to_blacklist(token, refresh_token)
     return {"detail": "Successfully logged out"}
+
+@router.options("/preflight")
+async def preflight(request: Request):  
+    return Response(status_code=200, headers={
+        "Access-Control-Allow-Methods": ", ".join(main.methods),
+        "Access-Control-Allow-Headers": ", ".join(main.cors_headers)
+    })
 
 
 '''
