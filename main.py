@@ -2,11 +2,9 @@ from fastapi import FastAPI, Request
 from user_registration.routes import router
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from user_registration import crud
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
-from user_registration import routes as user_registration_routes
 from cloud_scanners import routes as cloud_scanner
 
 

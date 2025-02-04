@@ -15,6 +15,7 @@ sudo apt-get install redis-server
 pymongo
 motor
 boto3
+jwt
 
 
 

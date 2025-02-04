@@ -12,7 +12,7 @@ from .auth import SECRET_KEY, ALGORITHM
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
-
+import random
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -41,10 +41,11 @@ async def create_user(user: UserCreate):
 
     # Generate a unique user ID
     unique_user_id = str(uuid.uuid4())
+    unique_no = str(random.randint(1, 9999))
     
     # Create the new user object
     user_data = {
-        "_id": unique_user_id,
+        "_id": unique_user_id+unique_no,
         "username": user.username,
         "hashed_password": hashed_password.decode('utf-8'),
         "user_id": unique_user_id,
@@ -56,6 +57,7 @@ async def create_user(user: UserCreate):
     return user_data
 
 async def verify_password(username: str, password: str):
+ 
     """
     Verify a user's password.
     """
@@ -167,3 +169,28 @@ async def is_token_blacklisted(token: str) -> bool:
 async def revoke_access_key(access_key: str):
     redis_client.hset(access_key, mapping={"status": "blacklisted"})
     redis_client.expire(access_key, 17280000)  # 200 days
+
+
+async def delete_user_account(username: str):
+    result = await users_collection.delete_one({"username": {"$eq": username}})
+    if result.deleted_count == 1:
+        return {"detail": "User account deleted successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+
+async def add_first_last_name(username: str, first_name: str, last_name: str):
+  
+    """
+    Add first name and last name to an existing user.
+    """
+    user = await get_user_by_username(username)
+  
+    if user["username"]:
+        await users_collection.update_one(
+            {"username": username},
+            {"$set": {"first_name": first_name, "last_name": last_name}}
+        )
+        return {"detail": "First name and last name added successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
