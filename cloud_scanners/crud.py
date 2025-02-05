@@ -1,17 +1,37 @@
-import json
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError    
 from fastapi import HTTPException
-from .schemas import AWSCredentials 
-class EC2Instance:
-    def __init__(self, instance_id, iam_role, permissions):
-        self.instance_id = instance_id
-        self.iam_role = iam_role
-        self.permissions = permissions
+from .schemas import AWSCredentials
 
 
 
-async def check_aws_credentials(awscreds: AWSCredentials):
+async def check_aws_connection(awscreds: AWSCredentials):
+    try:
+        # Create a session using the provided credentials
+        session = boto3.Session(
+            aws_access_key_id=awscreds.aws_access_key,
+            aws_secret_access_key=awscreds.aws_secret_key,
+            region_name=awscreds.aws_region
+        )
+            # Create an S3 client
+        s3_client = session.client('s3')
+
+        # List buckets to check connectivity
+        s3_client.list_buckets()
+        return {"message": "Successfully connected to AWS"}
+    except NoCredentialsError:
+        raise HTTPException(status_code=400, detail="Credentials not available")
+    except PartialCredentialsError:
+        raise HTTPException(status_code=400, detail="Incomplete credentials provided")
+    except ClientError as e:
+        raise HTTPException(status_code=400, detail=f"AWS Client Error: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
+    
+
+
+async def ec2_scans(awscreds: AWSCredentials):
     try:
         session = boto3.Session(
             aws_access_key_id=awscreds.aws_access_key,

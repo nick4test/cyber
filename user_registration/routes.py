@@ -1,7 +1,7 @@
 # routes.py
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, Form, Response, status
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, Header, Request,Response, status
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.security import OAuth2PasswordBearer 
 import jwt
 from fastapi.templating import Jinja2Templates
 from . import schemas, crud, auth
@@ -28,28 +28,18 @@ async def register_user(request: Request, user_create: schemas.UserCreate):
     
     user = schemas.UserCreate(username=user_create.username, password=user_create.password)
     db_user = await crud.get_user_by_username(user.username)
-    accept_header = request.headers.get("Accept", " ")
-    
-    if "text/html" in accept_header:
-        if db_user:
-            return JSONResponse(status_code=400, content={"error": "Username already registered"})  
-        await crud.create_user(user)
-        return JSONResponse(status_code=200, content={"success": "User registered successfully"})
-    else:
-        if db_user:
-            return templates.TemplateResponse("register.html", {"request": request, "error": "Username already registered"})
-        await crud.create_user(user)
-        return templates.TemplateResponse("register.html", {"request": request, "success": "User registered successfully"})  
-
+    if db_user:
+        return JSONResponse(status_code=400, content={"error": "Username already registered"})  
+    await crud.create_user(user)
+    return JSONResponse(status_code=200, content={"success": "User registered successfully"})
+   
 @router.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 @router.post("/token", response_model=schemas.Token)
 async def login_for_access_token(request: Request, Login_data: LoginRequest):
-
     user = await crud.verify_password(Login_data.username, Login_data.password)
-    
     if not user:
         raise HTTPException(
             status_code=401,
@@ -57,15 +47,13 @@ async def login_for_access_token(request: Request, Login_data: LoginRequest):
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
+    access_token = await auth.create_access_token(
         data={"data":{"sub": Login_data.username, "Admin": "no", "dt_type": ["string"]}}, expires_delta=access_token_expires
     )
     refresh_token_expires = timedelta(minutes=auth.REFRESH_TOKEN_EXPIRE_MINUTES)
-    refresh_token = auth.create_refresh_token(
+    refresh_token = await auth.create_refresh_token(
         data={"sub": Login_data.username}, expires_delta=refresh_token_expires
     )
-
-
     response= {
             "token_type": "bearer",
             "access_token": access_token,
@@ -75,7 +63,7 @@ async def login_for_access_token(request: Request, Login_data: LoginRequest):
 
 @router.post("/refresh", response_model=schemas.Token)
 async def refresh_access_token(refresh_token: str = Header(None, alias="refresh_token")):
-    payload = auth.verify_refresh_token(refresh_token, auth.SECRET_KEY)
+    payload = await auth.verify_refresh_token(refresh_token, auth.SECRET_KEY)
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,10 +79,10 @@ async def refresh_access_token(refresh_token: str = Header(None, alias="refresh_
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
+    access_token = await auth.create_access_token(
         data={"sub": username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return JSONResponse({"access_token": access_token, "token_type": "bearer"})
 
 @router.post("/access_key", response_model=schemas.AccessKey)
 async def access_key(
@@ -150,7 +138,9 @@ async def dashboard(
     authorization: Optional[str] = Header(None, alias="authorization"),
       # Optionally provide Authorization header
     ):
+
     if access_key:
+
         user = await crud.get_user_by_access_key(access_key)
         if not user:
             raise HTTPException(
@@ -187,9 +177,7 @@ async def preflight(request: Request):
         "Access-Control-Allow-Headers": ", ".join(main.cors_headers)
     })
 
-
 '''
-
 if you want the request routed from main file to user_registration/routes.py to /cloud_scanners 
 (for example http://127.0.0.1/user_registration/cloud_scanners/ec2_instance)
 from cloud_scanners import routes as cloud_scanner
@@ -296,7 +284,7 @@ async def verify_refresh_token(
     refresh_token: Optional[str] = Header(None, alias="refresh_token"),
 ):
     if refresh_token:
-        payload = auth.verify_refresh_token(refresh_token, auth.SECRET_KEY)
+        payload = await auth.verify_refresh_token(refresh_token, auth.SECRET_KEY)
         if payload is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

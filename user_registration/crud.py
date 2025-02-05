@@ -57,11 +57,12 @@ async def create_user(user: UserCreate):
     return user_data
 
 async def verify_password(username: str, password: str):
- 
+
     """
     Verify a user's password.
     """
     user = await get_user_by_username(username)
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -73,29 +74,29 @@ async def verify_password(username: str, password: str):
         return True
     return False
 
-def encrypt_access_key(plain_text: str) -> str:
+async def encrypt_access_key(plain_text: str) -> str:
     """
     Encrypt an access key using AES encryption.
     """
-    iv = b'd\xec;bNr\x0b\xdd\x92\xe9\xed\x8aV\x9b\x86X'
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-    encryptor = cipher.encryptor()
-    padder = padding.PKCS7(algorithms.AES.block_size).padder()
-    padded_data = padder.update(plain_text.encode('utf-8')) + padder.finalize()
-    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
-    return base64.urlsafe_b64encode(iv + encrypted_data).decode('utf-8')
+    original_bytes = os.environ["iv"] = os.getenv("iv")
+    original_bytes = original_bytes.encode('utf-8')[:32]
+    iv = original_bytes[:12]
+    encryptor = Cipher(algorithms.AES(key), modes.GCM(iv), backend=default_backend()).encryptor()
+    ciphertext = encryptor.update(plain_text.encode('utf-8')) + encryptor.finalize()
 
-def decrypt_access_key(encrypted_text: str) -> str:
+    # Combine IV, tag, and ciphertext and encode to URL-safe base64
+    return base64.urlsafe_b64encode(iv + encryptor.tag + ciphertext).decode('utf-8')
+
+async def decrypt_access_key(encrypted_text: str) -> str:
     """
     Decrypt an encrypted access key using AES decryption.
     """
     encrypted_data = base64.urlsafe_b64decode(encrypted_text)
-    iv = encrypted_data[:16]
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-    decryptor = cipher.decryptor()
-    decrypted_padded_data = decryptor.update(encrypted_data[16:]) + decryptor.finalize()
-    unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
-    decrypted_data = unpadder.update(decrypted_padded_data) + unpadder.finalize()
+    iv = encrypted_data[:12]
+    tag = encrypted_data[12:28]
+    ciphertext = encrypted_data[28:]
+    decryptor = Cipher(algorithms.AES(key), modes.GCM(iv, tag), backend=default_backend()).decryptor()
+    decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
     return decrypted_data.decode('utf-8')
 
 async def create_access_key(username: str):
@@ -113,7 +114,7 @@ async def create_access_key(username: str):
         token = jwt.encode(token_payload, encryption_key, algorithm='HS256')
 
         # Encrypt the JWT token using AES
-        encrypted_key = encrypt_access_key(token)
+        encrypted_key = await encrypt_access_key(token)
         
         # Update the user's access key in the database
         await users_collection.update_one({"username": username}, {"$set": {"access_key": encrypted_key}})
@@ -135,7 +136,7 @@ async def get_user_by_access_key(access_key: str):
     Retrieve a user by their access key.
     """
     try:
-        decrypted_key = decrypt_access_key(access_key)
+        decrypted_key = await decrypt_access_key(access_key)
     except Exception as e:
         return None
 
@@ -194,3 +195,4 @@ async def add_first_last_name(username: str, first_name: str, last_name: str):
         return {"detail": "First name and last name added successfully"}
     else:
         raise HTTPException(status_code=404, detail="User not found")
+    

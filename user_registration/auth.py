@@ -14,7 +14,7 @@ ALGORITHM = os.environ["ALGORITHM"] = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+async def create_access_token(data: dict, expires_delta: timedelta = None):
     """
     Create a JWT access token with an optional expiration time.
     """
@@ -27,7 +27,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def create_refresh_token(data: dict, expires_delta: timedelta = None):
+async def create_refresh_token(data: dict, expires_delta: timedelta = None):
     """
     Create a JWT refresh token with an optional expiration time.
     """
@@ -78,7 +78,7 @@ async def refresh_access_token(refresh_token: str):
                 headers={"WWW-Authenticate": "Bearer"},
             )
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
+        access_token = await create_access_token(
             data={"sub": username}, expires_delta=access_token_expires
         )
         return {"access_token": access_token, "token_type": "bearer"}
@@ -89,7 +89,7 @@ async def refresh_access_token(refresh_token: str):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-def verify_refresh_token(token: str, secret_key: str) -> dict:
+async def verify_refresh_token(token: str, secret_key: str) -> dict:
 
     try:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
@@ -97,5 +97,5 @@ def verify_refresh_token(token: str, secret_key: str) -> dict:
     except JWTError:
         return None
 
-def generate_access_key() -> str:
+async def generate_access_key() -> str:
     return secrets.token_hex(16)
