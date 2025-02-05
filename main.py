@@ -2,10 +2,11 @@ from fastapi import FastAPI, Request
 from user_registration.routes import router
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from user_registration import crud
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+from cloud_scanners import routes as cloud_scanner
+
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="user_registration/static"), name="static")
@@ -13,7 +14,7 @@ app.include_router(router)
 
 # CORS configuration
 methods = ["GET", "POST", "OPTIONS"]
-cors_headers = ["Content-Type", "Referer", "Authorization", "Access-Control-Request-Method", "Access-Control-Request-Headers"]
+cors_headers = ["Content-Type", "Referer", "Authorization", "Access-Control-Request-Method","aws_access_key", "aws_secret_key", "region_name","Access-Control-Request-Headers"]
 origin = ["*"]
 
 app.add_middleware(
@@ -22,7 +23,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=methods,
     allow_headers=cors_headers,
-    expose_headers=["*"]
+    expose_headers=cors_headers,
+
 )
 
 # Middleware to set X-Frame-Options header
@@ -62,3 +64,6 @@ async def check_blacklist(request: Request, call_next):
 
     response = await call_next(request)
     return response
+
+
+app.include_router(cloud_scanner.router, prefix="/cloud_scanners")
